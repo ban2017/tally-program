@@ -6,7 +6,7 @@ const App = () => {
   const [activeMenu, setActiveMenu] = useState('company');
   const [activePage, setActivePage] = useState('company-profile');
   const [currentUser, setCurrentUser] = useState('manoj');
-  
+
   // Global state for changes
   const [companyName, setCompanyName] = useState('TALLY ELITE UAE');
   const [theme, setTheme] = useState('Green');
@@ -15,22 +15,60 @@ const App = () => {
 
   // State for all form fields
   const [formData, setFormData] = useState({});
+  const [lastSavedAt, setLastSavedAt] = useState('');
+
+  const toCurrency = (value) => {
+    const safeValue = Number(value) || 0;
+    return new Intl.NumberFormat('en-AE', {
+      style: 'currency',
+      currency: 'AED',
+      maximumFractionDigits: 2,
+    }).format(safeValue);
+  };
+
+  const exportJson = (filename, object) => {
+    const blob = new Blob([JSON.stringify(object, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const formatDateForDisplay = (value) => {
+    if (!value) return 'N/A';
+    try {
+      return new Date(value).toLocaleDateString();
+    } catch {
+      return value;
+    }
+  };
 
   // Load saved settings on mount
   useEffect(() => {
-    const saved = localStorage.getItem('appSettings');
-    if (saved) {
-      const settings = JSON.parse(saved);
-      setCompanyName(settings.companyName || 'TALLY ELITE UAE');
-      setTheme(settings.theme || 'Green');
-      setLanguage(settings.language || 'English');
-      setDateFormat(settings.dateFormat || 'DD/MM/YYYY');
-      setCurrentUser(settings.currentUser || 'manoj');
-    }
+    try {
+      const saved = localStorage.getItem('appSettings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        setCompanyName(settings.companyName || 'TALLY ELITE UAE');
+        setTheme(settings.theme || 'Green');
+        setLanguage(settings.language || 'English');
+        setDateFormat(settings.dateFormat || 'DD/MM/YYYY');
+        setCurrentUser(settings.currentUser || 'manoj');
+      }
 
-    const savedFormData = localStorage.getItem('formData');
-    if (savedFormData) {
-      setFormData(JSON.parse(savedFormData));
+      const savedFormData = localStorage.getItem('formData');
+      if (savedFormData) {
+        setFormData(JSON.parse(savedFormData));
+      }
+
+      const savedStamp = localStorage.getItem('lastSavedAt');
+      if (savedStamp) {
+        setLastSavedAt(savedStamp);
+      }
+    } catch (error) {
+      console.error('Failed to load saved app data:', error);
     }
   }, []);
 
@@ -45,19 +83,93 @@ const App = () => {
     localStorage.setItem('formData', JSON.stringify(formData));
   }, [formData]);
 
-  // Handle input change
   const handleFieldChange = (fieldLabel, value) => {
     setFormData(prev => ({
       ...prev,
       [fieldLabel]: value
     }));
 
-    // Update global state for specific fields
     if (fieldLabel === 'Company Name') setCompanyName(value);
     if (fieldLabel === 'Username') setCurrentUser(value);
     if (fieldLabel === 'Theme') setTheme(value);
     if (fieldLabel === 'Language') setLanguage(value);
     if (fieldLabel === 'Date Format') setDateFormat(value);
+  };
+
+  const saveCurrentData = () => {
+    const timestamp = new Date().toISOString();
+    setLastSavedAt(timestamp);
+    localStorage.setItem('lastSavedAt', timestamp);
+  };
+
+  const handleResetData = () => {
+    if (!window.confirm('Reset all saved app data and settings?')) return;
+
+    localStorage.removeItem('appSettings');
+    localStorage.removeItem('formData');
+    localStorage.removeItem('lastSavedAt');
+
+    setCompanyName('TALLY ELITE UAE');
+    setTheme('Green');
+    setLanguage('English');
+    setDateFormat('DD/MM/YYYY');
+    setCurrentUser('manoj');
+    setFormData({});
+    setLastSavedAt('');
+    setLoggedIn(false);
+    setActiveMenu('company');
+    setActivePage('company-profile');
+  };
+
+  const handleExportData = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      settings: {
+        companyName,
+        theme,
+        language,
+        dateFormat,
+        currentUser,
+      },
+      formData,
+    };
+
+    exportJson('tally-elite-backup.json', payload);
+    alert('✅ Backup exported successfully.');
+  };
+
+  const handleImportData = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+
+        if (imported.settings) {
+          setCompanyName(imported.settings.companyName || companyName);
+          setTheme(imported.settings.theme || theme);
+          setLanguage(imported.settings.language || language);
+          setDateFormat(imported.settings.dateFormat || dateFormat);
+          setCurrentUser(imported.settings.currentUser || currentUser);
+        }
+
+        if (imported.formData) {
+          setFormData(imported.formData);
+        }
+
+        const timestamp = new Date().toISOString();
+        setLastSavedAt(timestamp);
+        localStorage.setItem('lastSavedAt', timestamp);
+        alert('✅ Backup imported successfully.');
+      } catch (error) {
+        alert('❌ Invalid backup file. Please select a valid Tally Elite backup.');
+      }
+    };
+
+    reader.readAsText(file);
+    event.target.value = '';
   };
 
   const pages = {
@@ -68,7 +180,8 @@ const App = () => {
         { id: 'company-profile', label: 'Company Profile' },
         { id: 'company-info', label: 'Company Info' },
         { id: 'addresses', label: 'Addresses' },
-        { id: 'contacts', label: 'Contacts' }
+        { id: 'contacts', label: 'Contacts' },
+        { id: 'dashboard', label: 'Dashboard' }
       ],
       sections: {
         'company-profile': {
@@ -121,6 +234,18 @@ const App = () => {
             { label: 'WhatsApp', type: 'tel', defaultValue: '+971 50 XXX XXXX' },
             { label: 'Support Email', type: 'email', defaultValue: 'support@tallyeliteuae.com' },
             { label: 'Fax', type: 'tel', defaultValue: '+971 4 XXX YYYY' }
+          ]
+        },
+        'dashboard': {
+          title: 'Dashboard Overview',
+          desc: 'Quick financial summary and activity overview',
+          fields: [
+            { label: 'Monthly Revenue', type: 'number', defaultValue: '120000', readonly: true },
+            { label: 'Operating Cost', type: 'number', defaultValue: '80000', readonly: true },
+            { label: 'Net Profit', type: 'number', defaultValue: '40000', readonly: true },
+            { label: 'Outstanding Invoices', type: 'number', defaultValue: '15000', readonly: true },
+            { label: 'Tax Due', type: 'number', defaultValue: '6000', readonly: true },
+            { label: 'Cash Balance', type: 'number', defaultValue: '350000', readonly: true }
           ]
         }
       }
@@ -364,8 +489,8 @@ const App = () => {
           title: 'Data Backups',
           desc: 'Backup and restore database',
           fields: [
-            { label: 'Last Backup', type: 'text', defaultValue: '2026-10-09 18:30', readonly: true },
-            { label: 'Backup Location', type: 'text', defaultValue: '/backups/tally-2026-10-09.bak', readonly: true },
+            { label: 'Last Backup', type: 'text', defaultValue: lastSavedAt ? formatDateForDisplay(lastSavedAt) : 'Not saved yet', readonly: true },
+            { label: 'Backup Location', type: 'text', defaultValue: 'local-storage', readonly: true },
             { label: 'Backup Frequency', type: 'select', options: ['Daily', 'Weekly', 'Monthly'], defaultValue: 'Daily' },
             { label: 'Next Backup', type: 'text', defaultValue: '2026-10-11 02:00', readonly: true },
             { label: 'Backup Size (MB)', type: 'number', defaultValue: '1250', readonly: true }
@@ -374,6 +499,20 @@ const App = () => {
       }
     }
   };
+
+  const dashboardCards = [
+    { title: 'Monthly Revenue', value: toCurrency(formData['company-dashboard-Monthly Revenue'] || 120000), icon: '💰', trend: '+12.4%' },
+    { title: 'Expenses', value: toCurrency(formData['company-dashboard-Operating Cost'] || 80000), icon: '📉', trend: '-4.1%' },
+    { title: 'Net Profit', value: toCurrency(formData['company-dashboard-Net Profit'] || 40000), icon: '📈', trend: '+8.7%' },
+    { title: 'Tax Due', value: toCurrency(formData['company-dashboard-Tax Due'] || 6000), icon: '🧾', trend: 'Priority' }
+  ];
+
+  const activityList = [
+    'Invoice #INV-2026-0001 processed successfully',
+    'Cash balance reviewed and reconciled',
+    'Tax report generated and sent to Finance',
+    'Company profile updated by admin user'
+  ];
 
   if (!loggedIn) {
     return (
@@ -390,12 +529,12 @@ const App = () => {
               e.preventDefault();
               const username = e.target.elements[0].value.trim();
               const password = e.target.elements[1].value.trim();
-              
+
               if (!username || !password) {
                 alert('Please enter username and password');
                 return;
               }
-              
+
               setCurrentUser(username);
               setLoggedIn(true);
             }}>
@@ -421,14 +560,14 @@ const App = () => {
     );
   }
 
-  const currentPageData = pages[activeMenu];
-  const section = currentPageData.sections[activePage];
+  const currentPageData = pages[activeMenu] || pages.company;
+  const section = currentPageData.sections[activePage] || currentPageData.sections['company-profile'];
 
   return (
     <div className="app-container">
       <header className="navbar">
         <nav className="nav-menu">
-          {Object.keys(pages).map(key => (
+          {Object.keys(pages).map((key) => (
             <button
               key={key}
               className={`nav-item ${activeMenu === key ? 'active' : ''}`}
@@ -458,7 +597,7 @@ const App = () => {
 
       <div className="dropdown-area">
         <div className="dropdown-content">
-          {currentPageData.submenus.map(submenu => (
+          {currentPageData.submenus.map((submenu) => (
             <button
               key={submenu.id}
               className={`dropdown-item ${activePage === submenu.id ? 'active' : ''}`}
@@ -486,37 +625,73 @@ const App = () => {
             </div>
           </div>
 
+          <div className="dashboard-strip">
+            {dashboardCards.map((card) => (
+              <div key={card.title} className="dashboard-card">
+                <div className="dashboard-card__top">
+                  <span className="dashboard-card__icon">{card.icon}</span>
+                  <span className="dashboard-card__trend">{card.trend}</span>
+                </div>
+                <p className="dashboard-card__label">{card.title}</p>
+                <h3>{card.value}</h3>
+              </div>
+            ))}
+          </div>
+
           <div className="page-body">
+            <div className="dashboard-panel">
+              <div className="summary-box">
+                <h3>Quick Actions</h3>
+                <div className="action-buttons">
+                  <button className="action-btn primary" onClick={handleExportData}>Export Data</button>
+                  <label className="action-btn secondary upload-label">
+                    Import Data
+                    <input type="file" accept="application/json" onChange={handleImportData} />
+                  </label>
+                  <button className="action-btn danger" onClick={handleResetData}>Reset</button>
+                </div>
+              </div>
+
+              <div className="summary-box">
+                <h3>Recent Activity</h3>
+                <ul className="activity-list">
+                  {activityList.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
             <section className="form-section">
               <h2 className="section-title">{section.title}</h2>
               <p className="section-desc">{section.desc}</p>
 
               <form className="data-form" onSubmit={(e) => {
                 e.preventDefault();
+                saveCurrentData();
                 alert('✅ Data saved successfully!');
               }}>
                 <div className="form-grid">
                   {section.fields.map((field, idx) => {
                     const fieldKey = `${activeMenu}-${activePage}-${field.label}`;
-                    const savedValue = formData[fieldKey] || field.defaultValue;
+                    const savedValue = formData[fieldKey] ?? field.defaultValue;
 
                     return (
                       <div key={idx} className="form-group">
                         <label>{field.label}</label>
                         {field.type === 'select' ? (
-                          <select 
-                            className="form-control" 
+                          <select
+                            className="form-control"
                             value={savedValue}
                             onChange={(e) => {
                               handleFieldChange(fieldKey, e.target.value);
-                              // Also update global state for specific settings
                               if (field.label === 'Theme') setTheme(e.target.value);
                               if (field.label === 'Language') setLanguage(e.target.value);
                               if (field.label === 'Date Format') setDateFormat(e.target.value);
                             }}
                             disabled={field.readonly}
                           >
-                            {field.options.map(opt => (
+                            {field.options.map((opt) => (
                               <option key={opt} value={opt}>{opt}</option>
                             ))}
                           </select>
@@ -527,7 +702,6 @@ const App = () => {
                             value={savedValue}
                             onChange={(e) => {
                               handleFieldChange(fieldKey, e.target.value);
-                              // Update global state for specific fields
                               if (field.label === 'Company Name') setCompanyName(e.target.value);
                               if (field.label === 'Username') setCurrentUser(e.target.value);
                             }}
@@ -542,7 +716,10 @@ const App = () => {
 
                 <div className="form-actions">
                   <button type="submit" className="btn btn-primary">💾 Save Changes</button>
-                  <button type="reset" className="btn btn-secondary">🔄 Reset</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => {
+                    setFormData((prev) => ({ ...prev }));
+                    alert('🔄 Form values remain in the current session.');
+                  }}>🔄 Reset</button>
                 </div>
               </form>
             </section>
