@@ -1,0 +1,44 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #b9ca96;
+  color: #1a2d1a;
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  cursor: pointer;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-layout {
+  flex: 1;
+  background: linear-gradient(180deg, #b9ca96 0%, #a8bb81 100%);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}

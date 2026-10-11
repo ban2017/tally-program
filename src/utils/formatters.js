@@ -15,3 +15,10 @@ export function formatDate(value) {
     return value;
   }
 }
+
+export function formatNumber(value) {
+  const parsed = Number(value) || 0;
+  return new Intl.NumberFormat('en-AE', {
+    maximumFractionDigits: 2,
+  }).format(parsed);
+}

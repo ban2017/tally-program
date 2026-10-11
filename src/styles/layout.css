@@ -1,0 +1,189 @@
+.app-header {
+  background: linear-gradient(180deg, #7aa14a 0%, #5a8e4a 100%);
+  border-bottom: 3px solid #4a5d2a;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.company-name {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.current-date {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.user-badge {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  padding: 8px 16px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.navbar-wrapper {
+  background: linear-gradient(180deg, #7aa14a 0%, #5a8e4a 100%);
+  border-bottom: 2px solid #4a5d2a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-primary {
+  padding: 12px 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 26px;
+  background: linear-gradient(180deg, #b8d888 0%, #a8c878 100%);
+  color: #1a2d1a;
+  border: 2px solid rgba(74, 93, 42, 0.85);
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.nav-item:hover {
+  background: linear-gradient(180deg, #c8d9a8 0%, #b8d888 100%);
+  transform: translateY(-2px);
+}
+
+.nav-item.active {
+  background: linear-gradient(180deg, #7aa14a 0%, #5a8e4a 100%);
+  color: #ffffff;
+  border-color: #1a2d1a;
+}
+
+.nav-icon {
+  font-size: 18px;
+}
+
+.nav-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.exit-btn {
+  background: linear-gradient(180deg, #e89898 0%, #d88888 100%);
+  color: #ffffff;
+  border: 2px solid #b57777;
+  margin-left: auto;
+  padding: 11px 26px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.dropdown-area {
+  background: rgba(199, 224, 170, 0.65);
+  border-bottom: 1px solid rgba(74, 93, 42, 0.35);
+  padding: 10px 20px;
+  min-height: 50px;
+}
+
+.dropdown-content {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 2px solid rgba(74, 93, 42, 0.6);
+  border-radius: 6px;
+  color: #1a2d1a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(74, 93, 42, 0.9);
+}
+
+.dropdown-item.active {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(74, 93, 42, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(74, 93, 42, 0.25);
+}
+
+.app-footer {
+  background: rgba(90, 130, 74, 0.95);
+  border-top: 1px solid rgba(74, 93, 42, 0.65);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.footer-left, .footer-center, .footer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
