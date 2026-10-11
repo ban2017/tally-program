@@ -1,21 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
+
+const defaultRecords = {
+  company: [
+    { id: 1, name: 'TALLY ELITE UAE', type: 'Company', status: 'Active' },
+    { id: 2, name: 'Business Bay Branch', type: 'Address', status: 'Active' },
+    { id: 3, name: 'Finance Team', type: 'Department', status: 'Active' },
+  ],
+  master: [
+    { id: 1, name: 'Cash', type: 'Asset', balance: 10000 },
+    { id: 2, name: 'Bank', type: 'Asset', balance: 25000 },
+    { id: 3, name: 'Accounts Receivable', type: 'Asset', balance: 8500 },
+  ],
+  transaction: [
+    { id: 1, reference: 'INV-2026-0001', customer: 'ABC Company', amount: 5000, status: 'Pending' },
+    { id: 2, reference: 'PO-2026-0001', customer: 'Supplier XYZ', amount: 3000, status: 'Approved' },
+    { id: 3, reference: 'JE-001', customer: 'Internal', amount: 1200, status: 'Completed' },
+  ],
+  report: [
+    { id: 1, name: 'Balance Sheet', value: 'AED 500000', status: 'Updated' },
+    { id: 2, name: 'Profit & Loss', value: 'AED 40000', status: 'Updated' },
+    { id: 3, name: 'Tax Report', value: 'AED 5000', status: 'Pending' },
+  ],
+  admin: [
+    { id: 1, username: 'manoj', role: 'Admin', status: 'Active' },
+    { id: 2, username: 'sara', role: 'Accountant', status: 'Active' },
+    { id: 3, username: 'ali', role: 'Manager', status: 'Inactive' },
+  ],
+};
 
 const App = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const [activeMenu, setActiveMenu] = useState('company');
   const [activePage, setActivePage] = useState('company-profile');
   const [currentUser, setCurrentUser] = useState('manoj');
-
-  // Global state for changes
   const [companyName, setCompanyName] = useState('TALLY ELITE UAE');
   const [theme, setTheme] = useState('Green');
   const [language, setLanguage] = useState('English');
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
-
-  // State for all form fields
   const [formData, setFormData] = useState({});
   const [lastSavedAt, setLastSavedAt] = useState('');
+  const [records, setRecords] = useState(defaultRecords);
 
   const toCurrency = (value) => {
     const safeValue = Number(value) || 0;
@@ -26,150 +51,13 @@ const App = () => {
     }).format(safeValue);
   };
 
-  const exportJson = (filename, object) => {
-    const blob = new Blob([JSON.stringify(object, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const formatDateForDisplay = (value) => {
+  const formatDate = (value) => {
     if (!value) return 'N/A';
     try {
       return new Date(value).toLocaleDateString();
     } catch {
       return value;
     }
-  };
-
-  // Load saved settings on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('appSettings');
-      if (saved) {
-        const settings = JSON.parse(saved);
-        setCompanyName(settings.companyName || 'TALLY ELITE UAE');
-        setTheme(settings.theme || 'Green');
-        setLanguage(settings.language || 'English');
-        setDateFormat(settings.dateFormat || 'DD/MM/YYYY');
-        setCurrentUser(settings.currentUser || 'manoj');
-      }
-
-      const savedFormData = localStorage.getItem('formData');
-      if (savedFormData) {
-        setFormData(JSON.parse(savedFormData));
-      }
-
-      const savedStamp = localStorage.getItem('lastSavedAt');
-      if (savedStamp) {
-        setLastSavedAt(savedStamp);
-      }
-    } catch (error) {
-      console.error('Failed to load saved app data:', error);
-    }
-  }, []);
-
-  // Save settings whenever they change
-  useEffect(() => {
-    const settings = { companyName, theme, language, dateFormat, currentUser };
-    localStorage.setItem('appSettings', JSON.stringify(settings));
-  }, [companyName, theme, language, dateFormat, currentUser]);
-
-  // Save form data whenever it changes
-  useEffect(() => {
-    localStorage.setItem('formData', JSON.stringify(formData));
-  }, [formData]);
-
-  const handleFieldChange = (fieldLabel, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldLabel]: value
-    }));
-
-    if (fieldLabel === 'Company Name') setCompanyName(value);
-    if (fieldLabel === 'Username') setCurrentUser(value);
-    if (fieldLabel === 'Theme') setTheme(value);
-    if (fieldLabel === 'Language') setLanguage(value);
-    if (fieldLabel === 'Date Format') setDateFormat(value);
-  };
-
-  const saveCurrentData = () => {
-    const timestamp = new Date().toISOString();
-    setLastSavedAt(timestamp);
-    localStorage.setItem('lastSavedAt', timestamp);
-  };
-
-  const handleResetData = () => {
-    if (!window.confirm('Reset all saved app data and settings?')) return;
-
-    localStorage.removeItem('appSettings');
-    localStorage.removeItem('formData');
-    localStorage.removeItem('lastSavedAt');
-
-    setCompanyName('TALLY ELITE UAE');
-    setTheme('Green');
-    setLanguage('English');
-    setDateFormat('DD/MM/YYYY');
-    setCurrentUser('manoj');
-    setFormData({});
-    setLastSavedAt('');
-    setLoggedIn(false);
-    setActiveMenu('company');
-    setActivePage('company-profile');
-  };
-
-  const handleExportData = () => {
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      settings: {
-        companyName,
-        theme,
-        language,
-        dateFormat,
-        currentUser,
-      },
-      formData,
-    };
-
-    exportJson('tally-elite-backup.json', payload);
-    alert('✅ Backup exported successfully.');
-  };
-
-  const handleImportData = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const imported = JSON.parse(e.target.result);
-
-        if (imported.settings) {
-          setCompanyName(imported.settings.companyName || companyName);
-          setTheme(imported.settings.theme || theme);
-          setLanguage(imported.settings.language || language);
-          setDateFormat(imported.settings.dateFormat || dateFormat);
-          setCurrentUser(imported.settings.currentUser || currentUser);
-        }
-
-        if (imported.formData) {
-          setFormData(imported.formData);
-        }
-
-        const timestamp = new Date().toISOString();
-        setLastSavedAt(timestamp);
-        localStorage.setItem('lastSavedAt', timestamp);
-        alert('✅ Backup imported successfully.');
-      } catch (error) {
-        alert('❌ Invalid backup file. Please select a valid Tally Elite backup.');
-      }
-    };
-
-    reader.readAsText(file);
-    event.target.value = '';
   };
 
   const pages = {
@@ -181,7 +69,7 @@ const App = () => {
         { id: 'company-info', label: 'Company Info' },
         { id: 'addresses', label: 'Addresses' },
         { id: 'contacts', label: 'Contacts' },
-        { id: 'dashboard', label: 'Dashboard' }
+        { id: 'dashboard', label: 'Dashboard' },
       ],
       sections: {
         'company-profile': {
@@ -196,8 +84,8 @@ const App = () => {
             { label: 'Financial Year Start', type: 'date', defaultValue: '2026-01-01' },
             { label: 'Business Registration', type: 'text', defaultValue: 'BR-2020-001' },
             { label: 'Tax Certificate', type: 'text', defaultValue: 'TC-2026-0001' },
-            { label: 'Industry Type', type: 'text', defaultValue: 'Accounting Services' }
-          ]
+            { label: 'Industry Type', type: 'text', defaultValue: 'Accounting Services' },
+          ],
         },
         'company-info': {
           title: 'Company Information',
@@ -209,10 +97,10 @@ const App = () => {
             { label: 'Employees', type: 'number', defaultValue: '50' },
             { label: 'Annual Revenue', type: 'number', defaultValue: '5000000' },
             { label: 'Business License', type: 'text', defaultValue: 'BL-2020-123' },
-            { label: 'Registered Capital', type: 'number', defaultValue: '1000000' }
-          ]
+            { label: 'Registered Capital', type: 'number', defaultValue: '1000000' },
+          ],
         },
-        'addresses': {
+        addresses: {
           title: 'Company Addresses',
           desc: 'Head office and branch addresses',
           fields: [
@@ -221,10 +109,10 @@ const App = () => {
             { label: 'Postal Code', type: 'text', defaultValue: '00971' },
             { label: 'Street Address', type: 'text', defaultValue: 'Business Bay, Dubai' },
             { label: 'Building Name', type: 'text', defaultValue: 'Business Tower' },
-            { label: 'Floor Number', type: 'text', defaultValue: '5' }
-          ]
+            { label: 'Floor Number', type: 'text', defaultValue: '5' },
+          ],
         },
-        'contacts': {
+        contacts: {
           title: 'Company Contacts',
           desc: 'Communication channels',
           fields: [
@@ -233,10 +121,10 @@ const App = () => {
             { label: 'Website', type: 'url', defaultValue: 'www.tallyeliteuae.com' },
             { label: 'WhatsApp', type: 'tel', defaultValue: '+971 50 XXX XXXX' },
             { label: 'Support Email', type: 'email', defaultValue: 'support@tallyeliteuae.com' },
-            { label: 'Fax', type: 'tel', defaultValue: '+971 4 XXX YYYY' }
-          ]
+            { label: 'Fax', type: 'tel', defaultValue: '+971 4 XXX YYYY' },
+          ],
         },
-        'dashboard': {
+        dashboard: {
           title: 'Dashboard Overview',
           desc: 'Quick financial summary and activity overview',
           fields: [
@@ -245,12 +133,11 @@ const App = () => {
             { label: 'Net Profit', type: 'number', defaultValue: '40000', readonly: true },
             { label: 'Outstanding Invoices', type: 'number', defaultValue: '15000', readonly: true },
             { label: 'Tax Due', type: 'number', defaultValue: '6000', readonly: true },
-            { label: 'Cash Balance', type: 'number', defaultValue: '350000', readonly: true }
-          ]
-        }
-      }
+            { label: 'Cash Balance', type: 'number', defaultValue: '350000', readonly: true },
+          ],
+        },
+      },
     },
-
     master: {
       title: 'Master',
       icon: '📚',
@@ -258,10 +145,10 @@ const App = () => {
         { id: 'accounts', label: 'Chart of Accounts' },
         { id: 'inventory', label: 'Inventory' },
         { id: 'payroll', label: 'Payroll' },
-        { id: 'admin-master', label: 'Admin Master' }
+        { id: 'admin-master', label: 'Admin Master' },
       ],
       sections: {
-        'accounts': {
+        accounts: {
           title: 'Chart of Accounts',
           desc: 'Create and manage accounting ledgers',
           fields: [
@@ -271,10 +158,10 @@ const App = () => {
             { label: 'Opening Balance', type: 'number', defaultValue: '10000' },
             { label: 'Account Description', type: 'text', defaultValue: 'Main Cash Account' },
             { label: 'GL Code', type: 'text', defaultValue: 'GL-001' },
-            { label: 'Sub Account', type: 'text', defaultValue: 'N/A' }
-          ]
+            { label: 'Sub Account', type: 'text', defaultValue: 'N/A' },
+          ],
         },
-        'inventory': {
+        inventory: {
           title: 'Inventory Management',
           desc: 'Manage products and stock items',
           fields: [
@@ -285,10 +172,10 @@ const App = () => {
             { label: 'Reorder Level', type: 'number', defaultValue: '20' },
             { label: 'Unit Price', type: 'number', defaultValue: '150' },
             { label: 'Supplier', type: 'text', defaultValue: 'Supplier Name' },
-            { label: 'Category', type: 'text', defaultValue: 'Electronics' }
-          ]
+            { label: 'Category', type: 'text', defaultValue: 'Electronics' },
+          ],
         },
-        'payroll': {
+        payroll: {
           title: 'Payroll Master',
           desc: 'Employee and payslip management',
           fields: [
@@ -298,8 +185,8 @@ const App = () => {
             { label: 'Basic Salary', type: 'number', defaultValue: '5000' },
             { label: 'Department', type: 'text', defaultValue: 'Finance' },
             { label: 'Email', type: 'email', defaultValue: 'john@example.com' },
-            { label: 'Contact Number', type: 'tel', defaultValue: '+971 50 XXX XXXX' }
-          ]
+            { label: 'Contact Number', type: 'tel', defaultValue: '+971 50 XXX XXXX' },
+          ],
         },
         'admin-master': {
           title: 'Admin Master',
@@ -309,12 +196,11 @@ const App = () => {
             { label: 'Department', type: 'text', defaultValue: 'Finance' },
             { label: 'Location', type: 'text', defaultValue: 'Dubai' },
             { label: 'Manager', type: 'text', defaultValue: 'Admin Name' },
-            { label: 'Budget Allocation', type: 'number', defaultValue: '100000' }
-          ]
-        }
-      }
+            { label: 'Budget Allocation', type: 'number', defaultValue: '100000' },
+          ],
+        },
+      },
     },
-
     transaction: {
       title: 'Transaction',
       icon: '💳',
@@ -322,10 +208,10 @@ const App = () => {
         { id: 'journal', label: 'Journal Entry' },
         { id: 'invoice', label: 'Invoice' },
         { id: 'purchase', label: 'Purchase Order' },
-        { id: 'payment', label: 'Payment' }
+        { id: 'payment', label: 'Payment' },
       ],
       sections: {
-        'journal': {
+        journal: {
           title: 'Journal Entry',
           desc: 'Book accounting journal entries',
           fields: [
@@ -335,10 +221,10 @@ const App = () => {
             { label: 'Debit Account', type: 'select', options: ['Cash', 'Bank', 'Expense'], defaultValue: 'Expense' },
             { label: 'Credit Account', type: 'select', options: ['Cash', 'Bank', 'Income'], defaultValue: 'Cash' },
             { label: 'Amount', type: 'number', defaultValue: '1000' },
-            { label: 'Approval Status', type: 'select', options: ['Pending', 'Approved', 'Rejected'], defaultValue: 'Pending' }
-          ]
+            { label: 'Approval Status', type: 'select', options: ['Pending', 'Approved', 'Rejected'], defaultValue: 'Pending' },
+          ],
         },
-        'invoice': {
+        invoice: {
           title: 'Sales Invoice',
           desc: 'Create and manage sales invoices',
           fields: [
@@ -348,10 +234,10 @@ const App = () => {
             { label: 'Amount', type: 'number', defaultValue: '5000' },
             { label: 'Tax %', type: 'number', defaultValue: '5' },
             { label: 'Due Date', type: 'date', defaultValue: '2026-11-10' },
-            { label: 'Payment Status', type: 'select', options: ['Paid', 'Pending', 'Overdue'], defaultValue: 'Pending' }
-          ]
+            { label: 'Payment Status', type: 'select', options: ['Paid', 'Pending', 'Overdue'], defaultValue: 'Pending' },
+          ],
         },
-        'purchase': {
+        purchase: {
           title: 'Purchase Order',
           desc: 'Create and track purchase orders',
           fields: [
@@ -361,10 +247,10 @@ const App = () => {
             { label: 'Item', type: 'text', defaultValue: 'Product Name' },
             { label: 'Quantity', type: 'number', defaultValue: '50' },
             { label: 'Unit Price', type: 'number', defaultValue: '100' },
-            { label: 'Delivery Date', type: 'date', defaultValue: '2026-10-20' }
-          ]
+            { label: 'Delivery Date', type: 'date', defaultValue: '2026-10-20' },
+          ],
         },
-        'payment': {
+        payment: {
           title: 'Payment Entry',
           desc: 'Record payments and receipts',
           fields: [
@@ -374,12 +260,11 @@ const App = () => {
             { label: 'From Account', type: 'text', defaultValue: 'Cash' },
             { label: 'To Account', type: 'text', defaultValue: 'Bank' },
             { label: 'Reference', type: 'text', defaultValue: 'Payment Ref #123' },
-            { label: 'Payment Status', type: 'select', options: ['Processed', 'Pending', 'Failed'], defaultValue: 'Processed' }
-          ]
-        }
-      }
+            { label: 'Payment Status', type: 'select', options: ['Processed', 'Pending', 'Failed'], defaultValue: 'Processed' },
+          ],
+        },
+      },
     },
-
     report: {
       title: 'Report',
       icon: '📈',
@@ -387,7 +272,7 @@ const App = () => {
         { id: 'balance-sheet', label: 'Balance Sheet' },
         { id: 'profit-loss', label: 'Profit & Loss' },
         { id: 'trial-balance', label: 'Trial Balance' },
-        { id: 'tax-report', label: 'Tax Report' }
+        { id: 'tax-report', label: 'Tax Report' },
       ],
       sections: {
         'balance-sheet': {
@@ -399,8 +284,8 @@ const App = () => {
             { label: 'Total Liabilities', type: 'number', defaultValue: '200000', readonly: true },
             { label: 'Total Equity', type: 'number', defaultValue: '300000', readonly: true },
             { label: 'Current Assets', type: 'number', defaultValue: '250000', readonly: true },
-            { label: 'Fixed Assets', type: 'number', defaultValue: '250000', readonly: true }
-          ]
+            { label: 'Fixed Assets', type: 'number', defaultValue: '250000', readonly: true },
+          ],
         },
         'profit-loss': {
           title: 'Profit & Loss Statement',
@@ -411,8 +296,8 @@ const App = () => {
             { label: 'Total Income', type: 'number', defaultValue: '100000', readonly: true },
             { label: 'Total Expenses', type: 'number', defaultValue: '60000', readonly: true },
             { label: 'Net Profit', type: 'number', defaultValue: '40000', readonly: true },
-            { label: 'Operating Profit', type: 'number', defaultValue: '35000', readonly: true }
-          ]
+            { label: 'Operating Profit', type: 'number', defaultValue: '35000', readonly: true },
+          ],
         },
         'trial-balance': {
           title: 'Trial Balance',
@@ -422,8 +307,8 @@ const App = () => {
             { label: 'Total Debits', type: 'number', defaultValue: '500000', readonly: true },
             { label: 'Total Credits', type: 'number', defaultValue: '500000', readonly: true },
             { label: 'Status', type: 'text', defaultValue: 'Balanced', readonly: true },
-            { label: 'Variance', type: 'number', defaultValue: '0', readonly: true }
-          ]
+            { label: 'Variance', type: 'number', defaultValue: '0', readonly: true },
+          ],
         },
         'tax-report': {
           title: 'Tax & GST Report',
@@ -434,12 +319,11 @@ const App = () => {
             { label: 'Tax Rate %', type: 'number', defaultValue: '5' },
             { label: 'Tax Amount', type: 'number', defaultValue: '5000', readonly: true },
             { label: 'Tax Paid', type: 'number', defaultValue: '4500' },
-            { label: 'Tax Due', type: 'number', defaultValue: '500', readonly: true }
-          ]
-        }
-      }
+            { label: 'Tax Due', type: 'number', defaultValue: '500', readonly: true },
+          ],
+        },
+      },
     },
-
     admin: {
       title: 'Admin',
       icon: '🔐',
@@ -447,10 +331,10 @@ const App = () => {
         { id: 'users', label: 'Users' },
         { id: 'roles', label: 'Roles & Permissions' },
         { id: 'settings', label: 'System Settings' },
-        { id: 'backups', label: 'Backups' }
+        { id: 'backups', label: 'Backups' },
       ],
       sections: {
-        'users': {
+        users: {
           title: 'User Management',
           desc: 'Create and manage system users',
           fields: [
@@ -460,20 +344,20 @@ const App = () => {
             { label: 'Role', type: 'select', options: ['Admin', 'Manager', 'Accountant', 'Viewer'], defaultValue: 'Admin' },
             { label: 'Status', type: 'select', options: ['Active', 'Inactive'], defaultValue: 'Active' },
             { label: 'Department', type: 'text', defaultValue: 'Finance' },
-            { label: 'Mobile Number', type: 'tel', defaultValue: '+971 50 XXX XXXX' }
-          ]
+            { label: 'Mobile Number', type: 'tel', defaultValue: '+971 50 XXX XXXX' },
+          ],
         },
-        'roles': {
+        roles: {
           title: 'Roles & Permissions',
           desc: 'Define user roles and access rights',
           fields: [
             { label: 'Role Name', type: 'text', defaultValue: 'Admin' },
             { label: 'Description', type: 'text', defaultValue: 'Full system access' },
             { label: 'Permissions', type: 'text', defaultValue: 'All' },
-            { label: 'Access Level', type: 'select', options: ['Super Admin', 'Admin', 'User', 'Guest'], defaultValue: 'Super Admin' }
-          ]
+            { label: 'Access Level', type: 'select', options: ['Super Admin', 'Admin', 'User', 'Guest'], defaultValue: 'Super Admin' },
+          ],
         },
-        'settings': {
+        settings: {
           title: 'System Settings',
           desc: 'App configuration and preferences',
           fields: [
@@ -482,37 +366,200 @@ const App = () => {
             { label: 'Language', type: 'select', options: ['English', 'Arabic'], defaultValue: 'English' },
             { label: 'Decimal Places', type: 'number', defaultValue: '2' },
             { label: 'Currency Symbol', type: 'text', defaultValue: 'AED' },
-            { label: 'Timezone', type: 'select', options: ['UTC+4', 'UTC+3', 'UTC+5'], defaultValue: 'UTC+4' }
-          ]
+            { label: 'Timezone', type: 'select', options: ['UTC+4', 'UTC+3', 'UTC+5'], defaultValue: 'UTC+4' },
+          ],
         },
-        'backups': {
+        backups: {
           title: 'Data Backups',
           desc: 'Backup and restore database',
           fields: [
-            { label: 'Last Backup', type: 'text', defaultValue: lastSavedAt ? formatDateForDisplay(lastSavedAt) : 'Not saved yet', readonly: true },
+            { label: 'Last Backup', type: 'text', defaultValue: lastSavedAt ? formatDate(lastSavedAt) : 'Not saved yet', readonly: true },
             { label: 'Backup Location', type: 'text', defaultValue: 'local-storage', readonly: true },
             { label: 'Backup Frequency', type: 'select', options: ['Daily', 'Weekly', 'Monthly'], defaultValue: 'Daily' },
             { label: 'Next Backup', type: 'text', defaultValue: '2026-10-11 02:00', readonly: true },
-            { label: 'Backup Size (MB)', type: 'number', defaultValue: '1250', readonly: true }
-          ]
-        }
-      }
-    }
+            { label: 'Backup Size (MB)', type: 'number', defaultValue: '1250', readonly: true },
+          ],
+        },
+      },
+    },
   };
 
+  const menuKeys = Object.keys(pages);
+  const currentMenuConfig = pages[activeMenu] || pages.company;
+  const currentSection = currentMenuConfig.sections[activePage] || currentMenuConfig.sections[Object.keys(currentMenuConfig.sections)[0]];
+
+  const summaryMetrics = useMemo(() => {
+    const revenue = (records.transaction || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const expenses = revenue * 0.55;
+    const profit = revenue - expenses;
+    return {
+      revenue,
+      expenses,
+      profit,
+      totalRecords: (records.transaction || []).length + (records.master || []).length + (records.admin || []).length,
+    };
+  }, [records]);
+
   const dashboardCards = [
-    { title: 'Monthly Revenue', value: toCurrency(formData['company-dashboard-Monthly Revenue'] || 120000), icon: '💰', trend: '+12.4%' },
-    { title: 'Expenses', value: toCurrency(formData['company-dashboard-Operating Cost'] || 80000), icon: '📉', trend: '-4.1%' },
-    { title: 'Net Profit', value: toCurrency(formData['company-dashboard-Net Profit'] || 40000), icon: '📈', trend: '+8.7%' },
-    { title: 'Tax Due', value: toCurrency(formData['company-dashboard-Tax Due'] || 6000), icon: '🧾', trend: 'Priority' }
+    { title: 'Monthly Revenue', value: toCurrency(summaryMetrics.revenue || 120000), icon: '💰', trend: '+12.4%' },
+    { title: 'Expenses', value: toCurrency(summaryMetrics.expenses || 80000), icon: '📉', trend: '-4.1%' },
+    { title: 'Net Profit', value: toCurrency(summaryMetrics.profit || 40000), icon: '📈', trend: '+8.7%' },
+    { title: 'Records', value: String(summaryMetrics.totalRecords || 0), icon: '🧾', trend: 'Live' },
   ];
 
   const activityList = [
-    'Invoice #INV-2026-0001 processed successfully',
-    'Cash balance reviewed and reconciled',
-    'Tax report generated and sent to Finance',
-    'Company profile updated by admin user'
+    `Revenue tracked: ${toCurrency(summaryMetrics.revenue)}`,
+    `Current transaction count: ${records.transaction.length}`,
+    `Master records count: ${records.master.length}`,
+    `User access level: ${currentUser}`,
   ];
+
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('appSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        setCompanyName(settings.companyName || 'TALLY ELITE UAE');
+        setTheme(settings.theme || 'Green');
+        setLanguage(settings.language || 'English');
+        setDateFormat(settings.dateFormat || 'DD/MM/YYYY');
+        setCurrentUser(settings.currentUser || 'manoj');
+      }
+
+      const savedForm = localStorage.getItem('formData');
+      if (savedForm) setFormData(JSON.parse(savedForm));
+
+      const savedRecords = localStorage.getItem('appRecords');
+      if (savedRecords) setRecords(JSON.parse(savedRecords));
+
+      const savedStamp = localStorage.getItem('lastSavedAt');
+      if (savedStamp) setLastSavedAt(savedStamp);
+    } catch (error) {
+      console.error('Could not load saved app data', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('appSettings', JSON.stringify({ companyName, theme, language, dateFormat, currentUser }));
+  }, [companyName, theme, language, dateFormat, currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('formData', JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    localStorage.setItem('appRecords', JSON.stringify(records));
+  }, [records]);
+
+  const handleFieldChange = (fieldLabel, value) => {
+    setFormData((prev) => ({ ...prev, [fieldLabel]: value }));
+
+    if (fieldLabel === 'Company Name') setCompanyName(value);
+    if (fieldLabel === 'Username') setCurrentUser(value);
+    if (fieldLabel === 'Theme') setTheme(value);
+    if (fieldLabel === 'Language') setLanguage(value);
+    if (fieldLabel === 'Date Format') setDateFormat(value);
+  };
+
+  const saveNow = () => {
+    const stamp = new Date().toISOString();
+    setLastSavedAt(stamp);
+    localStorage.setItem('lastSavedAt', stamp);
+  };
+
+  const exportData = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      settings: { companyName, theme, language, dateFormat, currentUser },
+      formData,
+      records,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'tally-elite-backup.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    alert('✅ Backup exported successfully.');
+  };
+
+  const importData = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (imported.settings) {
+          setCompanyName(imported.settings.companyName || companyName);
+          setTheme(imported.settings.theme || theme);
+          setLanguage(imported.settings.language || language);
+          setDateFormat(imported.settings.dateFormat || dateFormat);
+          setCurrentUser(imported.settings.currentUser || currentUser);
+        }
+        if (imported.formData) setFormData(imported.formData);
+        if (imported.records) setRecords(imported.records);
+
+        const stamp = new Date().toISOString();
+        setLastSavedAt(stamp);
+        localStorage.setItem('lastSavedAt', stamp);
+        alert('✅ Backup imported successfully.');
+      } catch {
+        alert('❌ Invalid backup file. Please select a valid Tally Elite backup.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
+  const resetAll = () => {
+    if (!window.confirm('Reset all saved app data and settings?')) return;
+
+    localStorage.removeItem('appSettings');
+    localStorage.removeItem('formData');
+    localStorage.removeItem('appRecords');
+    localStorage.removeItem('lastSavedAt');
+
+    setCompanyName('TALLY ELITE UAE');
+    setTheme('Green');
+    setLanguage('English');
+    setDateFormat('DD/MM/YYYY');
+    setCurrentUser('manoj');
+    setFormData({});
+    setRecords(defaultRecords);
+    setLastSavedAt('');
+    setLoggedIn(false);
+    setActiveMenu('company');
+    setActivePage('company-profile');
+  };
+
+  const addRecord = () => {
+    const item = (() => {
+      if (activeMenu === 'company') return { id: Date.now(), name: 'New Company Unit', type: 'Branch', status: 'Active' };
+      if (activeMenu === 'master') return { id: Date.now(), name: 'New Master Item', type: 'Asset', balance: 0 };
+      if (activeMenu === 'transaction') return { id: Date.now(), reference: `NEW-${Date.now()}`, customer: 'New Client', amount: 0, status: 'Pending' };
+      if (activeMenu === 'report') return { id: Date.now(), name: 'New Summary', value: 'AED 0', status: 'Draft' };
+      return { id: Date.now(), username: 'newuser', role: 'Viewer', status: 'Active' };
+    })();
+
+    setRecords((prev) => ({
+      ...prev,
+      [activeMenu]: [item, ...(prev[activeMenu] || [])],
+    }));
+  };
+
+  const deleteRecord = (recordId) => {
+    setRecords((prev) => ({
+      ...prev,
+      [activeMenu]: (prev[activeMenu] || []).filter((item) => item.id !== recordId),
+    }));
+  };
+
+  const currentRecords = records[activeMenu] || [];
+  const tableHeaders = currentRecords.length ? Object.keys(currentRecords[0]).filter((key) => key !== 'id') : [];
 
   if (!loggedIn) {
     return (
@@ -525,19 +572,22 @@ const App = () => {
               <p className="login-subtitle">TALLY ELITE UAE</p>
             </div>
 
-            <form className="login-form" onSubmit={(e) => {
-              e.preventDefault();
-              const username = e.target.elements[0].value.trim();
-              const password = e.target.elements[1].value.trim();
+            <form
+              className="login-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const username = e.target.elements[0].value.trim();
+                const password = e.target.elements[1].value.trim();
 
-              if (!username || !password) {
-                alert('Please enter username and password');
-                return;
-              }
+                if (!username || !password) {
+                  alert('Please enter username and password');
+                  return;
+                }
 
-              setCurrentUser(username);
-              setLoggedIn(true);
-            }}>
+                setCurrentUser(username);
+                setLoggedIn(true);
+              }}
+            >
               <div className="form-field">
                 <label>Username</label>
                 <input type="text" placeholder="Enter username" defaultValue="manoj" required />
@@ -560,20 +610,18 @@ const App = () => {
     );
   }
 
-  const currentPageData = pages[activeMenu] || pages.company;
-  const section = currentPageData.sections[activePage] || currentPageData.sections['company-profile'];
-
   return (
     <div className="app-container">
       <header className="navbar">
         <nav className="nav-menu">
-          {Object.keys(pages).map((key) => (
+          {menuKeys.map((key) => (
             <button
               key={key}
               className={`nav-item ${activeMenu === key ? 'active' : ''}`}
               onClick={() => {
                 setActiveMenu(key);
-                setActivePage(Object.keys(pages[key].sections)[0]);
+                const firstSection = Object.keys(pages[key].sections)[0];
+                setActivePage(firstSection);
               }}
             >
               <span className="nav-label">{pages[key].title}</span>
@@ -597,7 +645,7 @@ const App = () => {
 
       <div className="dropdown-area">
         <div className="dropdown-content">
-          {currentPageData.submenus.map((submenu) => (
+          {currentMenuConfig.submenus.map((submenu) => (
             <button
               key={submenu.id}
               className={`dropdown-item ${activePage === submenu.id ? 'active' : ''}`}
@@ -613,10 +661,10 @@ const App = () => {
         <div className="page-container">
           <div className="page-header">
             <div className="header-left">
-              <span className="page-icon">{currentPageData.icon}</span>
+              <span className="page-icon">{currentMenuConfig.icon}</span>
               <div>
-                <h1 className="page-title">{section.title}</h1>
-                <p className="page-breadcrumb">{currentPageData.title} → {section.title}</p>
+                <h1 className="page-title">{currentSection.title}</h1>
+                <p className="page-breadcrumb">{currentMenuConfig.title} → {currentSection.title}</p>
               </div>
             </div>
             <div className="company-badge">
@@ -643,12 +691,12 @@ const App = () => {
               <div className="summary-box">
                 <h3>Quick Actions</h3>
                 <div className="action-buttons">
-                  <button className="action-btn primary" onClick={handleExportData}>Export Data</button>
+                  <button className="action-btn primary" onClick={exportData}>Export Data</button>
                   <label className="action-btn secondary upload-label">
                     Import Data
-                    <input type="file" accept="application/json" onChange={handleImportData} />
+                    <input type="file" accept="application/json" onChange={importData} />
                   </label>
-                  <button className="action-btn danger" onClick={handleResetData}>Reset</button>
+                  <button className="action-btn danger" onClick={resetAll}>Reset</button>
                 </div>
               </div>
 
@@ -663,18 +711,21 @@ const App = () => {
             </div>
 
             <section className="form-section">
-              <h2 className="section-title">{section.title}</h2>
-              <p className="section-desc">{section.desc}</p>
+              <h2 className="section-title">{currentSection.title}</h2>
+              <p className="section-desc">{currentSection.desc}</p>
 
-              <form className="data-form" onSubmit={(e) => {
-                e.preventDefault();
-                saveCurrentData();
-                alert('✅ Data saved successfully!');
-              }}>
+              <form
+                className="data-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveNow();
+                  alert('✅ Data saved successfully!');
+                }}
+              >
                 <div className="form-grid">
-                  {section.fields.map((field, idx) => {
+                  {currentSection.fields.map((field, idx) => {
                     const fieldKey = `${activeMenu}-${activePage}-${field.label}`;
-                    const savedValue = formData[fieldKey] ?? field.defaultValue;
+                    const value = formData[fieldKey] ?? field.defaultValue;
 
                     return (
                       <div key={idx} className="form-group">
@@ -682,13 +733,8 @@ const App = () => {
                         {field.type === 'select' ? (
                           <select
                             className="form-control"
-                            value={savedValue}
-                            onChange={(e) => {
-                              handleFieldChange(fieldKey, e.target.value);
-                              if (field.label === 'Theme') setTheme(e.target.value);
-                              if (field.label === 'Language') setLanguage(e.target.value);
-                              if (field.label === 'Date Format') setDateFormat(e.target.value);
-                            }}
+                            value={value}
+                            onChange={(e) => handleFieldChange(fieldKey, e.target.value)}
                             disabled={field.readonly}
                           >
                             {field.options.map((opt) => (
@@ -699,12 +745,8 @@ const App = () => {
                           <input
                             type={field.type}
                             className="form-control"
-                            value={savedValue}
-                            onChange={(e) => {
-                              handleFieldChange(fieldKey, e.target.value);
-                              if (field.label === 'Company Name') setCompanyName(e.target.value);
-                              if (field.label === 'Username') setCurrentUser(e.target.value);
-                            }}
+                            value={value}
+                            onChange={(e) => handleFieldChange(fieldKey, e.target.value)}
                             disabled={field.readonly}
                             placeholder={field.label}
                           />
@@ -716,12 +758,45 @@ const App = () => {
 
                 <div className="form-actions">
                   <button type="submit" className="btn btn-primary">💾 Save Changes</button>
-                  <button type="button" className="btn btn-secondary" onClick={() => {
-                    setFormData((prev) => ({ ...prev }));
-                    alert('🔄 Form values remain in the current session.');
-                  }}>🔄 Reset</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => alert('🔄 Form values remain in the current session.')}>🔄 Reset</button>
                 </div>
               </form>
+            </section>
+
+            <section className="records-panel">
+              <div className="records-header">
+                <h3>📋 {currentMenuConfig.title} Records</h3>
+                <button type="button" className="add-record-btn" onClick={addRecord}>+ Add Record</button>
+              </div>
+
+              {currentRecords.length > 0 ? (
+                <div className="records-table-wrap">
+                  <table className="records-table">
+                    <thead>
+                      <tr>
+                        {tableHeaders.map((header) => (
+                          <th key={header}>{header}</th>
+                        ))}
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentRecords.map((item) => (
+                        <tr key={item.id}>
+                          {tableHeaders.map((header) => (
+                            <td key={`${item.id}-${header}`}>{String(item[header] ?? '-')}</td>
+                          ))}
+                          <td>
+                            <button type="button" className="delete-row-btn" onClick={() => deleteRecord(item.id)}>Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="empty-records">No records available for this section.</p>
+              )}
             </section>
           </div>
         </div>
